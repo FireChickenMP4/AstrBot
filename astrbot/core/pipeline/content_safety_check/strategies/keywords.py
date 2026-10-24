@@ -26,6 +26,10 @@ class KeywordsStrategy(ContentSafetyStrategy):
         #         self.keywords.extend(
         #             json.loads(base64.b64decode(f.read()).decode("utf-8"))["keywords"]
         #         )
+        # A bare string is one keyword, not a sequence of characters to match.
+        if isinstance(extra_keywords, str):
+            extra_keywords = [extra_keywords]
+
         for keyword in extra_keywords or []:
             try:
                 self._patterns.append(re.compile(keyword))

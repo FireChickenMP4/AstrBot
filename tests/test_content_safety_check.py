@@ -5,6 +5,9 @@ import pytest
 
 from astrbot.core.message.components import Plain, Reply
 from astrbot.core.pipeline.content_safety_check.stage import ContentSafetyCheckStage
+from astrbot.core.pipeline.content_safety_check.strategies.keywords import (
+    KeywordsStrategy,
+)
 from astrbot.core.pipeline.content_safety_check.strategies.strategy import (
     StrategySelector,
 )
@@ -142,12 +145,22 @@ def test_content_safety_skips_non_string_keyword():
     safety stage initialization. Such entries should be skipped while valid
     keywords keep working.
     """
-    from astrbot.core.pipeline.content_safety_check.strategies.keywords import (
-        KeywordsStrategy,
-    )
-
     strategy = KeywordsStrategy([123, None, "blocked"])
 
     assert strategy.check("nothing here") == (True, "")
+    ok, _ = strategy.check("this mentions blocked")
+    assert ok is False
+
+
+def test_keywords_strategy_treats_string_config_as_one_pattern():
+    """A bare string extra_keywords value is one keyword, not N char patterns.
+
+    The config schema declares a list, but a hand-edited config can hold a
+    plain string. Iterating it compiles every character as its own pattern,
+    so any message containing one of those letters is blocked.
+    """
+    strategy = KeywordsStrategy("blocked")
+
+    assert strategy.check("the old clock") == (True, "")
     ok, _ = strategy.check("this mentions blocked")
     assert ok is False
